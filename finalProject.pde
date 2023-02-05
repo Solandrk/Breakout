@@ -43,8 +43,9 @@ void mouseMoved(){
   
   if(gameCondition)
   {
-  if(mouseX <WIDTH -Slider.WIDTH && mouseX >0)
+  if(mouseX <WIDTH -Slider.WIDTH && mouseX >0){
      env.slider.xAxis = mouseX; 
+  }
   }else{
     env.menu.checkTouch();
   }
@@ -173,14 +174,14 @@ class Block {
   public static final int HEIGHT = 20;
   private int resistance = 0; 
   private Item item; 
-  
+  PImage texture = loadImage("blockTexture.jpg");
   public int[] blockColor =new int[]{255,100,0};
-  
+  int tint =255;
   public Block(float[] coordinate,int resistance){
    this.coordinate = coordinate; 
    this.resistance = resistance;
    int x = floor(random(10));
-   System.out.println("fasdfafasdfasdf");
+   
    if( x== 1)
    {
      item = new Item(coordinate,(int)random(1));
@@ -199,8 +200,8 @@ class Block {
   }
   public void drawBlock(){
     if(resistance > 0){
-    fill(blockColor[0],blockColor[1],blockColor[2]);
-    rect(coordinate[0],coordinate[1],WIDTH,HEIGHT);
+    tint(255,tint);  
+    image(texture, coordinate[0],coordinate[1],WIDTH,HEIGHT);
     }
   }
   public int[] collision(float[] coordinate)
@@ -209,10 +210,10 @@ class Block {
     int zarib[] = null;
     if(coordinate[0] <= this.coordinate[0]+WIDTH && coordinate[0] >= this.coordinate[0] && 
        coordinate[1] <= this.coordinate[1]+HEIGHT && coordinate[1] >= this.coordinate[1] && resistance > 0){
-         
-             
+      System.out.println("Colision Block : "+coordinate[0] + " | " + coordinate[1]);   
       resistance--;
       blockColor[0] -= 50;
+      tint /=2;
       if(resistance == 0)
       {
         if(item != null){
@@ -283,7 +284,7 @@ class MenuOption {
   public void pointerCollision(){
    
     if(mouseY < coordinate[1] && mouseY > coordinate[1] -30 && 
-       mouseX > coordinate[0] && mouseX < coordinate[0]+80){
+       mouseX > coordinate[0] && mouseX < coordinate[0]+title.length()*16){
          System.out.println(mouseX + " | "+coordinate[0]  + "\n"+mouseY+" | "+coordinate[1]);
         optionI.onClick();
     }
@@ -472,17 +473,19 @@ class Environment {
   
   public Environment(){
    newGame();
+   if(gameCondition)
    drawEnvironment();
   }
   public void reflash(){
    background(0);
-   System.out.println(gameCondition + " | " + gameover + " | " + pause);
    drawEnvironment();
   }
   
    public void newGame(){
-     slider = new Slider();
+    background(232, 238, 255);
+    slider = new Slider();
     ball = new Ball();
+    blocks = new ArrayList();
      for(int j = 0 ; j<4;j++){
       for(int i = 0 ; i< WIDTH/Block.WIDTH; i++){
          Block block = new Block(i*(Block.WIDTH+4)+6,j*(Block.HEIGHT+4)+50,1+(int)random(3));
