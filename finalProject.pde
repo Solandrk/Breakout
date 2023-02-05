@@ -2,9 +2,11 @@ private static final int HEIGHT = 700;
 private static final int WIDTH = 400;
 
 Environment env;
-boolean gameCondition = true;
+boolean gameCondition = false;
 boolean gameover = false;
 boolean pause = false;
+boolean main = true;
+boolean isMenuExist = false;
 
 void setup(){
   background(0);
@@ -14,11 +16,8 @@ void setup(){
 void draw(){ 
   if(gameCondition){
       env.ball.move();
-  }else {
-    if(gameover)
-     env.menu.showGameOverMenu();
-    if(pause)
-      env.menu.showPauseMenu();
+  }else if(!isMenuExist){
+    env.menu.drawMenu();
   }
 }
 
@@ -38,6 +37,18 @@ void keyPressed(){
     env.reflash();
    }
   }
+}
+
+void mouseMoved(){
+  
+  if(gameCondition)
+  {
+  if(mouseX <WIDTH -Slider.WIDTH && mouseX >0)
+     env.slider.xAxis = mouseX; 
+  }else{
+    env.menu.checkTouch();
+  }
+     
   
 }
  
@@ -158,8 +169,8 @@ class Ball
 
 class Block {
   private float[] coordinate;
-  public static final int WIDTH = 40;
-  public static final int HEIGHT = 15;
+  public static final int WIDTH = 45;
+  public static final int HEIGHT = 20;
   private int resistance = 0; 
   private Item item; 
   
@@ -251,6 +262,206 @@ class Item {
     Increase,SpeedUp,
   }
   
+  
+interface MOptionI {
+  void onClick();
+}
+
+class MenuOption {
+  private float[] coordinate; 
+  private String title ; 
+  MOptionI optionI;
+  private int[] rgb = {0,0,0};
+  
+  public MenuOption(String title,float[] coordinate,MOptionI optionI){
+    this.optionI = optionI;
+    this.title = title;
+    this.coordinate = coordinate;
+    
+  }
+  
+  public void pointerCollision(){
+   
+    if(mouseY < coordinate[1] && mouseY > coordinate[1] -30 && 
+       mouseX > coordinate[0] && mouseX < coordinate[0]+80){
+         System.out.println(mouseX + " | "+coordinate[0]  + "\n"+mouseY+" | "+coordinate[1]);
+        optionI.onClick();
+    }
+  }
+  public boolean touch(){
+   if(mouseY < coordinate[1] && mouseY > coordinate[1] -30 && 
+       mouseX > coordinate[0] && mouseX < coordinate[0]+title.length()*16){
+         rgb = new int[]{17, 242, 5};
+         return true;
+    }
+    rgb = new int[]{0, 0, 0};
+    return false;
+  }
+  
+  public void drawOption(){
+    fill(rgb[0],rgb[1],rgb[2]);
+    textSize(28);
+    text(title, coordinate[0], coordinate[1]); 
+  }
+  
+}
+
+class Menu{
+  
+  ArrayList<MenuOption> pauseOptions = new ArrayList();
+  ArrayList<MenuOption> startOptions = new ArrayList();
+  ArrayList<MenuOption> gameoverOptions = new ArrayList();
+  
+  private static final int MENU_WIDTH = 300;
+  private static final int MENU_HEIGHT = 400;
+  private static final int SpaceBetween = 50;
+  
+  private int xC = WIDTH/16;
+  private int yC = HEIGHT/8 ;
+  
+  public Menu(){
+      pauseOptions.add(new MenuOption("Continue",new float[]{xC+100,yC+SpaceBetween},new MOptionI(){
+        @Override
+        public void onClick(){
+            gameCondition = true;
+            env.reflash();
+        }
+      }));
+      pauseOptions.add(new MenuOption("Save Game",new float[]{xC,yC+2*SpaceBetween},new MOptionI(){
+        @Override
+        public void onClick(){
+            
+        }
+      }));
+      pauseOptions.add( new MenuOption("Restart",new float[]{xC,yC+3*SpaceBetween},new MOptionI(){
+        @Override
+        public void onClick(){
+            
+        }
+      }));
+      pauseOptions.add(new MenuOption("Exit",new float[]{xC,yC+170},new MOptionI(){
+        @Override
+        public void onClick(){
+            
+        }
+      }));
+      
+      /** Game Over Menu */
+       gameoverOptions.add(new MenuOption("New Game",new float[]{xC,yC+SpaceBetween},new MOptionI(){
+        @Override
+        public void onClick(){
+          gameCondition = true;
+            gameover = false;
+            isMenuExist = false;
+            env.newGame();
+        }
+      }));
+       gameoverOptions.add(new MenuOption("Main Menu",new float[]{xC,yC+2*SpaceBetween},new MOptionI(){
+        @Override
+        public void onClick(){
+            main = true;
+            gameover = false;
+            isMenuExist = false;
+            
+        }
+      }));
+       gameoverOptions.add(new MenuOption("Exit",new float[]{xC,yC+3*SpaceBetween},new MOptionI(){
+        @Override
+        public void onClick(){
+            exit();
+        }
+      }));
+      
+      
+       /** Start Menu */
+       startOptions.add(new MenuOption("Start Game",new float[]{xC,yC+SpaceBetween},new MOptionI(){
+        @Override
+        public void onClick(){
+            gameCondition = true;
+            main = false;
+            isMenuExist = false;
+            env.newGame();
+        }
+      }));
+       startOptions.add(new MenuOption("Load Games",new float[]{xC,yC+2*SpaceBetween},new MOptionI(){
+        @Override
+        public void onClick(){
+            
+        }
+      }));
+       startOptions.add(new MenuOption("Exit",new float[]{xC,yC+3*SpaceBetween},new MOptionI(){
+        @Override
+        public void onClick(){
+            exit();
+        }
+      }));
+      
+  }
+  private void drawBackground(){
+    isMenuExist = true;
+    fill(255);
+    rect(0 ,0,WIDTH,HEIGHT); 
+    fill(0);
+    rect(3*WIDTH/4,0,WIDTH,HEIGHT);
+  }
+  public void showGameOverMenu(){
+    drawBackground();
+      for(int i = 0 ; i<gameoverOptions.size() ;i++){
+        gameoverOptions.get(i).drawOption();
+      }
+  }
+   public void showMainMenu(){
+     drawBackground();
+      for(int i = 0 ; i<startOptions.size() ;i++){
+        startOptions.get(i).drawOption();
+      }
+  }
+  public void drawMenu(){
+    if(pause)showPauseMenu();
+    if(gameover)showGameOverMenu();
+    if(main) showMainMenu();
+      
+  }
+  
+  public void checkClicked(){
+     if(pause)
+       for(int i = 0 ; i<pauseOptions.size() ;i++){
+          pauseOptions.get(i).pointerCollision();
+        }
+     if(gameover)
+        for(int i = 0 ; i<gameoverOptions.size() ;i++){
+          gameoverOptions.get(i).pointerCollision();
+        }
+      if(main)
+         for(int i = 0 ; i<startOptions.size() ;i++){
+          startOptions.get(i).pointerCollision();
+        }
+  }
+  public void checkTouch(){
+    boolean touched = false;
+      if(pause)
+       for(int i = 0 ; i<pauseOptions.size() ;i++){
+          touched = touched || pauseOptions.get(i).touch();
+        }
+     if(gameover)
+        for(int i = 0 ; i<gameoverOptions.size() ;i++){
+          gameoverOptions.get(i).touch();
+        }
+        if(main)
+     for(int i = 0 ; i<startOptions.size() ;i++){
+       startOptions.get(i).touch();
+     }
+     env.reflash();   
+  }
+  public void showPauseMenu(){
+    drawBackground();
+      for(int i = 0 ; i<pauseOptions.size() ;i++){
+        pauseOptions.get(i).drawOption();
+      }
+    }
+  }
+  
+  
 class Environment {
   
   ArrayList<Block> blocks = new ArrayList();
@@ -260,22 +471,31 @@ class Environment {
   Menu menu = new Menu(); 
   
   public Environment(){
-    slider = new Slider();
-    ball = new Ball();
-     for(int j = 0 ; j<4;j++){
-      for(int i = 0 ; i< WIDTH/Block.WIDTH; i++){
-         Block block = new Block(i*(Block.WIDTH+2)+2,j*(Block.HEIGHT+1)+100,1+(int)random(3));
-         blocks.add(block); 
-      }  
-  } 
-  drawEnvironment();
+   newGame();
+   drawEnvironment();
   }
   public void reflash(){
    background(0);
+   System.out.println(gameCondition + " | " + gameover + " | " + pause);
    drawEnvironment();
   }
   
+   public void newGame(){
+     slider = new Slider();
+    ball = new Ball();
+     for(int j = 0 ; j<4;j++){
+      for(int i = 0 ; i< WIDTH/Block.WIDTH; i++){
+         Block block = new Block(i*(Block.WIDTH+4)+6,j*(Block.HEIGHT+4)+50,1+(int)random(3));
+         blocks.add(block); 
+      }  
+     }
+  }
+  
   public void drawEnvironment(){
+    if(!gameCondition){
+      menu.drawMenu();
+     return; 
+    }
     slider.drawSlider();
     ball.drawBall();
       for(int i = 0 ; i< blocks.size(); i++){
@@ -295,137 +515,5 @@ class Environment {
     }
   return null;
   }
+ 
 }
-
-interface MOptionI {
-  void onClick();
-}
-
-class MenuOption {
-  private float[] coordinate; 
-  private String title ; 
-  MOptionI optionI;
-  
-  public MenuOption(String title,float[] coordinate,MOptionI optionI){
-    this.optionI = optionI;
-    this.title = title;
-    this.coordinate = coordinate;
-    
-  }
-  
-  public void pointerCollision(){
-   
-    if(mouseY < coordinate[1] && mouseY > coordinate[1] -30 && 
-       mouseX > coordinate[0] && mouseX < coordinate[0]+80){
-         System.out.println(mouseX + " | "+coordinate[0]  + "\n"+mouseY+" | "+coordinate[1]);
-        optionI.onClick();
-    }
-  }
-  public void drawOption(){
-    fill(0, 408, 612, 204);
-    textSize(24);
-    text(title, coordinate[0], coordinate[1]); 
-  }
-  
-}
-
-class Menu{
-  
-  ArrayList<MenuOption> pauseOptions = new ArrayList();
-  ArrayList<MenuOption> startOptions = new ArrayList();
-  ArrayList<MenuOption> gameoverOptions = new ArrayList();
-  
-  private static final int MENU_WIDTH = 300;
-  private static final int MENU_HEIGHT = 400;
-  private static final int SpaceBetween = 40;
-  
-  private int xC = WIDTH/2 -150;
-  private int yC = HEIGHT/2 -200;
-  
-  public Menu(){
-      pauseOptions.add(new MenuOption("Continue",new float[]{xC+100,yC+50},new MOptionI(){
-        @Override
-        public void onClick(){
-            gameCondition = true;
-            env.reflash();
-        }
-      }));
-      pauseOptions.add(new MenuOption("Save Game",new float[]{xC+90,yC+90},new MOptionI(){
-        @Override
-        public void onClick(){
-            
-        }
-      }));
-      pauseOptions.add( new MenuOption("Restart",new float[]{xC+110,yC+130},new MOptionI(){
-        @Override
-        public void onClick(){
-            
-        }
-      }));
-      pauseOptions.add(new MenuOption("Exit",new float[]{xC+125,yC+170},new MOptionI(){
-        @Override
-        public void onClick(){
-            
-        }
-      }));
-      
-      /** Game Over Menu */
-       gameoverOptions.add(new MenuOption("New Game",new float[]{xC+90,yC+SpaceBetween},new MOptionI(){
-        @Override
-        public void onClick(){
-            
-        }
-      }));
-       gameoverOptions.add(new MenuOption("Load Game",new float[]{xC+88,yC+2*SpaceBetween},new MOptionI(){
-        @Override
-        public void onClick(){
-            
-        }
-      }));
-       gameoverOptions.add(new MenuOption("Main Menu",new float[]{xC+90,yC+3*SpaceBetween},new MOptionI(){
-        @Override
-        public void onClick(){
-            
-        }
-      }));
-       gameoverOptions.add(new MenuOption("Exit",new float[]{xC+125,yC+4*SpaceBetween},new MOptionI(){
-        @Override
-        public void onClick(){
-            
-        }
-      }));
-      
-  }
-  private void drawBackground(){
-    fill(255);
-   rect(xC ,yC,300,400,25); 
-  }
-  public void showGameOverMenu(){
-    drawBackground();
-      for(int i = 0 ; i<gameoverOptions.size() ;i++){
-        gameoverOptions.get(i).drawOption();
-      }
-  }
-  
-  public void startMenu(){
-  
-  }
-  
-  public void checkClicked(){
-     if(pause)
-       for(int i = 0 ; i<pauseOptions.size() ;i++){
-          pauseOptions.get(i).pointerCollision();
-        }
-     if(gameover)
-        for(int i = 0 ; i<gameoverOptions.size() ;i++){
-          gameoverOptions.get(i).pointerCollision();
-        }
-  }
-  
-  public void showPauseMenu(){
-    drawBackground();
-      for(int i = 0 ; i<pauseOptions.size() ;i++){
-        pauseOptions.get(i).drawOption();
-      }
-    }
-  }
